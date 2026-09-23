@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expediente Electrónico - CPCE Mendoza</title>
+    
+    <!-- 1. Bootstrap CSS (Framework Externo) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- 2. Hoja de Estilos Propia -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- VISTA 1: PANTALLA DE LOGIN -->
+    <div id="vista-login">
+        <div class="login-card text-center">
+            <img src="logos CPCE/LOGO CPCE AZUL.png" alt="Logo CPCE" class="logo-login" style="max-width: 150px;">
+            <h5 class="text-primary-cpce mb-4"><br><small class="text-muted">Expediente Electrónico</small></h5>
+            
+            <div class="alert alert-danger d-none" id="login-error"></div>
+            <div class="alert alert-success d-none" id="login-success"></div>
+            
+            <!-- FORMULARIO NORMAL -->
+            <form id="form-login" onsubmit="iniciarSesion(event)">
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold">Correo Electrónico</label>
+                    <input type="email" id="email" class="form-control" required placeholder="admin@cpcemza.org.ar">
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold">Contraseña o Código</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary-cpce w-100" id="btn-login">Ingresar al Sistema</button>
+            </form>
+
+            <!-- FORMULARIO NUEVA CONTRASEÑA (Oculto por defecto) -->
+            <form id="form-nueva-password" onsubmit="guardarNuevaPassword(event)" style="display: none;">
+                <div class="alert alert-warning small">Debe establecer una contraseña definitiva para continuar.</div>
+                <input type="hidden" id="reset-email">
+                <input type="hidden" id="reset-codigo">
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold">Nueva Contraseña</label>
+                    <input type="password" id="new-password" class="form-control" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-success w-100" id="btn-guardar-pass">Establecer y Entrar</button>
+            </form>
+        </div>
+    </div>
+
+
+<!-- VISTA 2: DASHBOARD -->
+    <div id="vista-dashboard">
+        <!-- Barra de Navegación -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary-cpce shadow-sm">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" href="#">
+                    <img src="https://cpcemza.org.ar/img/logo.png" alt="CPCE" height="30" class="me-2" style="filter: brightness(0) invert(1);">
+                    Sistema de Expedientes
+                </a>
+                <div class="d-flex align-items-center">
+                    <span class="navbar-text me-3 fw-bold text-white" id="user-info"></span>
+                    <button class="btn btn-sm btn-outline-light" onclick="cerrarSesion()">Salir</button>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Contenido Principal -->
+        <div class="container mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="text-primary-cpce">Expedientes Activos</h3>
+                <div>
+                    <button class="btn btn-outline-dark me-2" id="btn-ver-auditoria" onclick="abrirAuditoria()" style="display: none;">
+                        📊 Ver Auditoría
+                    </button>
+                    <button class="btn btn-outline-primary me-2" id="btn-gestion-usuarios" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+                        👥 Crear Usuario
+                    </button>
+                    <button class="btn btn-primary-cpce" id="btn-nuevo-exp" data-bs-toggle="modal" data-bs-target="#modalNuevoExp">
+                        + Nuevo Expediente
+                    </button>
+                </div>
+            </div>
+
+            <!-- NUEVO: BUSCADOR Y FILTROS AVANZADOS -->
+            <div class="row mb-3 g-2">
+                <div class="col-md-6">
+                    <input type="text" id="buscador-exp" class="form-control" placeholder="🔍 Buscar por Nro o Carátula..." onkeyup="filtrarExpedientes()">
+                </div>
+                <div class="col-md-3">
+                    <select id="filtro-area" class="form-select" onchange="filtrarExpedientes()">
+                        <option value="">Todas las Áreas</option>
+                        <option value="TRIBUNAL ETICA">Tribunal de Ética</option>
+                        <option value="COMISION VIGILANCIA">Comisión de Vigilancia</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select id="filtro-estado" class="form-select" onchange="filtrarExpedientes()">
+                        <option value="">Todos los Estados</option>
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN PROCESO">En Proceso</option>
+                        <option value="RESUELTO">Resuelto</option>
+                        <option value="ARCHIVADO">Archivado</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <!-- Tabla de Expedientes -->
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nro / Carátula</th>
+                                    <th>Área</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-expedientes">
+                                <tr><td colspan="5" class="text-center py-4">Cargando expedientes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 3: DETALLE DEL EXPEDIENTE -->
+    <div id="vista-detalle-exp" style="display: none;">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary-cpce shadow-sm mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#" onclick="volverDashboard()" style="cursor: pointer;">⬅ Volver al Dashboard</a>
+                <span class="navbar-text text-white fw-bold" id="detalle-nro-exp">EXP. N° ...</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                    <span class="navbar-text text-white fw-bold" id="detalle-nro-exp">EXP. N° ...</span>
+                    <select id="selector-estado-exp" class="form-select form-select-sm bg-light" style="width: auto; display: none;" onchange="cambiarEstadoExp(this.value)">
+                        <option value="PENDIENTE">Pendiente</option>
+                        <option value="EN PROCESO">En Proceso</option>
+                        <option value="RESUELTO">Resuelto</option>
+                        <option value="ARCHIVADO">Archivado</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-light ms-3" id="btn-asignar-partes" data-bs-toggle="modal" data-bs-target="#modalAsignarPartes" style="display: none;">
+                         Asignar Partes
+                    </button>
+                </div>
+        </nav>
+
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="text-primary-cpce">Fojas del Expediente</h4>
+                <button class="btn btn-primary-cpce" id="btn-subir-foja" data-bs-toggle="modal" data-bs-target="#modalSubirFoja">
+                    + Subir Foja (PDF)
+                </button>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Documento</th>
+                                <th>Confidencialidad</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-fojas">
+                            <tr><td colspan="4" class="text-center py-4 text-muted">Aún no hay fojas cargadas.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- SECCIÓN: NOTAS MARGINALES -->
+            <div id="seccion-notas-container">
+                <hr class="my-5">
+                <h4 class="text-primary-cpce mb-3">Notas Marginales</h4>
+                
+                <div class="card shadow-sm mb-5">
+                    <div class="card-body bg-light" id="contenedor-notas" style="max-height: 300px; overflow-y: auto;">
+                        <p class="text-muted text-center py-3">Cargando notas...</p>
+                    </div>
+                    <div class="card-footer bg-white border-top-0">
+                        <form id="form-nota" onsubmit="guardarNota(event)" class="d-flex gap-2">
+                            <input type="text" id="texto-nota" class="form-control" placeholder="Escribir una nueva nota en el expediente..." required>
+                            <button type="submit" class="btn btn-primary-cpce" id="btn-guardar-nota">Dejar Nota</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+  
+            
+            
+        </div>
+    </div>
+
+    <!-- MODAL: SUBIR FOJA -->
+    <div class="modal fade" id="modalSubirFoja" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary-cpce text-white">
+                    <h5 class="modal-title">Subir Nueva Foja</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-subir-foja" onsubmit="procesarSubidaFoja(event)">
+                    <div class="modal-body">
+                        <div class="alert alert-danger d-none" id="error-foja"></div>
+                        <div class="mb-3">
+    <label class="form-label fw-bold">Link de Google Drive (Solo Lectura)</label>
+    <input type="url" id="link-drive" class="form-control" required placeholder="Ej: https://drive.google.com/file/d/...">
+</div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Título del Documento</label>
+                            <input type="text" id="titulo-foja" class="form-control" required placeholder="Ej: Acta de Inicio">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Clasificación</label>
+                            <select id="confidencialidad-foja" class="form-select">
+                                <option value="PUBLICO">Público (Visible para todas las partes)</option>
+                                <option value="CONFIDENCIAL">Confidencial (Solo Tribunal/Secretaría)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary-cpce" id="btn-guardar-foja">Subir al Sistema</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO EXPEDIENTE -->
+    <div class="modal fade" id="modalNuevoExp" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary-cpce text-white">
+                    <h5 class="modal-title">Crear Nuevo Expediente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-nuevo-exp" onsubmit="crearExpediente(event)">
+                    <div class="modal-body">
+                        <div class="alert alert-danger d-none" id="modal-error"></div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nro y Carátula</label>
+                            <input type="text" id="exp-nro" class="form-control" required placeholder="EXP. N° 002 - Carátula 'A C/ B'">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Área</label>
+                            <select id="exp-area" class="form-select" required>
+                                <option value="TRIBUNAL_ETICA">Tribunal de Ética</option>
+                                <option value="COMISION_VIGILANCIA">Comisión de Vigilancia</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary-cpce" id="btn-guardar-exp">Guardar Expediente</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL: CREAR USUARIO -->
+    <div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary-cpce text-white">
+                    <h5 class="modal-title">Crear Nuevo Usuario</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-nuevo-usuario" onsubmit="crearUsuarioFront(event)">
+                    <div class="modal-body">
+                        <div class="alert alert-danger d-none" id="modal-user-error"></div>
+                        <div class="alert alert-success d-none" id="modal-user-success"></div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre y Apellido</label>
+                            <input type="text" id="new-user-nombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Correo Electrónico</label>
+                            <input type="email" id="new-user-email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Rol en el Sistema</label>
+                            <select id="new-user-rol" class="form-select" required>
+                                <option value="INSTRUCTOR">Instructor</option>
+                                <option value="TRIBUNAL">Tribunal de Ética</option>
+                                <option value="ABOGADO">Abogado Defensor</option>
+                                <option value="INVESTIGADO">Investigado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary-cpce" id="btn-crear-user">Generar y Enviar Acceso</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL: ASIGNAR PARTES -->
+    <div class="modal fade" id="modalAsignarPartes" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary-cpce text-white">
+                    <h5 class="modal-title">Asignar Partes al Expediente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-asignar-partes" onsubmit="guardarPartes(event)">
+                    <div class="modal-body">
+                        <div class="alert alert-info small">
+                            Ingrese los correos electrónicos de los usuarios registrados para darles acceso a este expediente.
+                        </div>
+                        <div class="alert alert-danger d-none" id="modal-partes-error"></div>
+                        <div class="alert alert-success d-none" id="modal-partes-success"></div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Correo del Abogado / Denunciante</label>
+                            <input type="email" id="email-abogado" class="form-control" placeholder="abogado@correo.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Correo del Investigado</label>
+                            <input type="email" id="email-investigado" class="form-control" placeholder="investigado@correo.com">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary-cpce" id="btn-guardar-partes">Otorgar Accesos</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- VISTA 4: AUDITORÍA -->
+    <div id="vista-auditoria" style="display: none;">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#" onclick="volverDashboardDesdeAuditoria()" style="cursor: pointer;">⬅ Volver al Dashboard</a>
+                <span class="navbar-text text-white fw-bold">Registro de Auditoría (sys_audit)</span>
+            </div>
+        </nav>
+        <div class="container">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Usuario ID</th>
+                                    <th>Acción</th>
+                                    <th>Entidad</th>
+                                    <th>Registro Afectado</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-auditoria">
+                                <tr><td colspan="6" class="text-center py-4">Cargando registros...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+    <!-- CONTENEDOR DE NOTIFICACIONES (TOASTS) -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+        <div id="sistema-toast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold" id="toast-mensaje"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
