@@ -3,7 +3,7 @@
 // VERSIÓN OPTIMIZADA (ASYNC/AWAIT & API WRAPPER)
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbw4H4DEHNOwQRuhklWHSMEOKs-SdEXHx6vCyh54DWCr5FLF4xotCRkGlMxbsAOmolHTTQ/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbxdyDIQxDAkW3Dp1cT-7qWfV2c0XlnRmNgALUHj2rv370w1Mfywd9nIFKEp_Qm4w771yA/exec"; 
 
 function mostrarToast(mensaje, tipo = 'success') {
     const toastEl = document.getElementById('sistema-toast');
@@ -211,9 +211,12 @@ async function crearExpediente(e) {
     btn.innerHTML = "Guardando...";
     errorDiv.classList.add('d-none');
 
+    // Capturamos los campos del modal de creación
     const payload = {
         nro_expediente: document.getElementById('exp-nro').value,
-        area: document.getElementById('exp-area').value
+        area: document.getElementById('exp-area').value,
+        id_denunciante: document.getElementById('exp-abogado') ? document.getElementById('exp-abogado').value : "",
+        id_investigado: document.getElementById('exp-investigado') ? document.getElementById('exp-investigado').value : ""
     };
 
     try {
