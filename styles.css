@@ -1,43 +1,749 @@
-/* ==========================================
-   ESTILOS GENERALES Y COLORES CPCE
-   ========================================== */
+/* ==========================================================================
+   EXPEDIENTE ELECTRÓNICO - CPCE MENDOZA
+   Capa visual propia sobre Bootstrap 5.3 (Bootstrap se usa para comportamiento).
+
+   Índice
+   1. Design tokens
+   2. Puente con Bootstrap (variables)
+   3. Base y tipografía
+   4. Layout y header
+   5. Componentes (botones, alertas, badges, paneles)
+   6. Formularios
+   7. Tablas (con versión apilada en mobile)
+   8. Notas marginales y fojas
+   9. Modales y toasts
+   10. Estados (carga, vacío, vistas)
+   11. Login
+   12. Responsive
+   13. Accesibilidad
+   ========================================================================== */
+
+
+/* 1. DESIGN TOKENS
+   -------------------------------------------------------------------------- */
 :root {
-    --cpce-blue: #337ab7;
+    /* Color: el azul institucional estructura todo; el resto sirve para estados */
+    --cpce-primary: #2B6CA3;
+    --cpce-primary-dark: #163B63;
+    --cpce-primary-light: #E8F0F7;
+    --cpce-secondary: #3F5670;
+    --cpce-accent: #337ab7;          /* azul original del sitio, usado en el margen de foja */
+
+    --surface: #FFFFFF;
+    --surface-soft: #F7F9FB;
+    --surface-hover: #EEF3F8;
+    --canvas: #F3F5F8;
+
+    --text-primary: #1B2733;
+    --text-secondary: #465666;
+    --text-muted: #5F6E7E;
+
+    --border: #D9E0E8;
+    --border-strong: #B4C0CD;
+
+    --success: #1E7A46;
+    --warning: #8A5A00;
+    --danger: #B3261E;
+    --info: #2B6CA3;
+    --success-soft: #E2F3E8;
+    --warning-soft: #FDF3D7;
+    --danger-soft: #FBE7E5;
+    --info-soft: #E3EEF9;
+
+    /* Tipografía */
+    --font-ui: "Source Sans 3", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --fs-display: 2rem;
+    --fs-h1: 1.75rem;
+    --fs-h2: 1.25rem;
+    --fs-h3: 1.0625rem;
+    --fs-body: 0.9375rem;
+    --fs-small: 0.8125rem;
+    --fs-caption: 0.75rem;
+
+    /* Espaciado */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-8: 3rem;
+
+    /* Radios: mínimo en tablas, moderado en controles y paneles */
+    --radius-sm: 3px;
+    --radius-md: 6px;
+
+    /* Sombra: solo para elementos flotantes (modales, toasts) */
+    --shadow-overlay: 0 8px 24px rgba(22, 59, 99, 0.18);
+
+    --container: 1240px;
+    --gutter: 1rem;
+    --touch: 2.75rem;                /* ~44px */
 }
 
-body { 
-    background-color: #f4f7f6; 
+
+/* 2. PUENTE CON BOOTSTRAP
+   Redefinimos variables para que también se vea bien el HTML que genera app.js.
+   -------------------------------------------------------------------------- */
+:root {
+    --bs-body-font-family: var(--font-ui);
+    --bs-body-font-size: var(--fs-body);
+    --bs-body-color: var(--text-primary);
+    --bs-body-color-rgb: 27, 39, 51;
+    --bs-body-bg: var(--canvas);
+    --bs-border-color: var(--border);
+    --bs-border-radius: var(--radius-md);
+    --bs-link-color: var(--cpce-primary);
+    --bs-link-hover-color: var(--cpce-primary-dark);
+    --bs-secondary-color: var(--text-secondary);
+
+    --bs-primary: #2B6CA3;
+    --bs-primary-rgb: 43, 108, 163;
+    --bs-secondary-rgb: 95, 110, 126;
+    --bs-success-rgb: 30, 122, 70;
+    --bs-danger-rgb: 179, 38, 30;
+    --bs-warning-rgb: 246, 222, 150;
+    --bs-info-rgb: 207, 227, 245;
+    --bs-dark-rgb: 31, 45, 61;
+
+    --bs-backdrop-bg: #16283B;
+    --bs-backdrop-opacity: 0.5;
 }
 
-/* Clases Institucionales */
-.bg-primary-cpce { background-color: var(--cpce-blue) !important; color: white; }
-.text-primary-cpce { color: var(--cpce-blue) !important; }
-.btn-primary-cpce { background-color: var(--cpce-blue); border-color: var(--cpce-blue); color: white; }
-.btn-primary-cpce:hover { background-color: #286090; border-color: #204d74; color: white; }
+/* Clases institucionales heredadas (por si app.js las usa al renderizar) */
+.bg-primary-cpce { background-color: var(--cpce-primary-dark); color: #fff; }
+.text-primary-cpce { color: var(--cpce-primary-dark); }
 
-/* Contenedores de Vistas (Manejo de SPA) */
-#vista-login { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    min-height: 100vh; 
+
+/* 3. BASE Y TIPOGRAFÍA
+   -------------------------------------------------------------------------- */
+body {
+    font-family: var(--font-ui);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--canvas);
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
 }
 
-#vista-dashboard { 
-    display: none; 
+h1, h2, h3 { color: var(--cpce-primary-dark); margin: 0; }
+
+.page-title,
+.exp-title,
+.login-title,
+.modal-title,
+.section-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.2;
 }
 
-/* Tarjeta de Login */
-.login-card { 
-    width: 100%; 
-    max-width: 400px; 
-    padding: 30px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-    border-radius: 8px; 
-    background: white;
+.page-title { font-size: var(--fs-h1); }
+.section-title { font-size: var(--fs-h2); }
+.page-lead { margin: var(--space-1) 0 0; color: var(--text-secondary); max-width: 60ch; }
+
+a { text-underline-offset: 0.15em; }
+
+.icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
-.logo-login { 
-    max-width: 250px; 
-    margin-bottom: 20px; 
+
+/* 4. LAYOUT Y HEADER
+   -------------------------------------------------------------------------- */
+.page {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: var(--space-5) var(--gutter) var(--space-8);
+}
+
+.page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.page-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: var(--space-6) 0 var(--space-3);
+}
+
+.app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.app-header__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    min-height: 3.75rem;
+    padding: var(--space-2) var(--gutter);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.brand { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.brand__logo { height: 2rem; width: auto; display: block; }
+.brand__name {
+    padding-left: var(--space-3);
+    border-left: 1px solid var(--border-strong);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--fs-h3);
+    color: var(--cpce-primary-dark);
+    white-space: nowrap;
+}
+
+.app-header__user { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.user-info {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--cpce-primary-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 22rem;
+}
+
+/* Auditoría: mismo sistema, cabecera más oscura para señalar el área de control */
+.app-header--dark { background: var(--cpce-primary-dark); border-bottom-color: transparent; }
+.app-header--dark .brand__logo { filter: brightness(0) invert(1); }
+.app-header--dark .brand__name { color: #fff; border-left-color: rgba(255, 255, 255, 0.35); }
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--touch);
+    padding: 0 var(--space-1);
+    margin-bottom: var(--space-2);
+    background: none;
+    border: 0;
+    font-weight: 600;
+    color: var(--cpce-primary);
+    cursor: pointer;
+}
+.btn-back:hover { color: var(--cpce-primary-dark); text-decoration: underline; text-underline-offset: 0.2em; }
+
+/* Encabezado del expediente: el "margen de foja" es el rasgo distintivo del sistema */
+.exp-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+.exp-title {
+    font-size: var(--fs-h1);
+    padding-left: var(--space-4);
+    border-left: 4px solid var(--cpce-accent);
+    overflow-wrap: anywhere;
+}
+.exp-head__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.exp-head__actions .form-select { width: auto; min-width: 11rem; }
+
+
+/* 5. COMPONENTES
+   -------------------------------------------------------------------------- */
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+    align-items: end;
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+.filters .form-label { margin-bottom: var(--space-1); }
+
+/* Botones: primario, secundario, destructivo */
+.btn {
+    --bs-btn-padding-x: var(--space-4);
+    --bs-btn-padding-y: var(--space-2);
+    --bs-btn-font-size: var(--fs-body);
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: var(--radius-md);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.5rem;
+    line-height: 1.25;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.btn-sm { --bs-btn-padding-x: var(--space-3); --bs-btn-font-size: var(--fs-small); min-height: 2.25rem; }
+.btn:disabled, .btn.disabled { opacity: 0.6; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+.btn-primary-cpce, .btn-primary, .btn-success {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--cpce-primary);
+    --bs-btn-border-color: var(--cpce-primary);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--cpce-primary-dark);
+    --bs-btn-hover-border-color: var(--cpce-primary-dark);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--cpce-primary-dark);
+    --bs-btn-active-border-color: var(--cpce-primary-dark);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--cpce-primary);
+    --bs-btn-disabled-border-color: var(--cpce-primary);
+}
+
+.btn-secondary, .btn-outline-secondary, .btn-outline-primary, .btn-outline-dark, .btn-outline-light {
+    --bs-btn-color: var(--cpce-primary-dark);
+    --bs-btn-bg: var(--surface);
+    --bs-btn-border-color: var(--border-strong);
+    --bs-btn-hover-color: var(--cpce-primary-dark);
+    --bs-btn-hover-bg: var(--surface-hover);
+    --bs-btn-hover-border-color: var(--cpce-primary);
+    --bs-btn-active-color: var(--cpce-primary-dark);
+    --bs-btn-active-bg: var(--cpce-primary-light);
+    --bs-btn-active-border-color: var(--cpce-primary);
+    --bs-btn-disabled-color: var(--text-muted);
+    --bs-btn-disabled-bg: var(--surface);
+    --bs-btn-disabled-border-color: var(--border);
+}
+
+.btn-danger, .btn-outline-danger {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--danger);
+    --bs-btn-border-color: var(--danger);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #8E1E18;
+    --bs-btn-hover-border-color: #8E1E18;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #8E1E18;
+    --bs-btn-active-border-color: #8E1E18;
+}
+
+/* Alertas: borde lateral fino, sin sombras */
+.alert {
+    border-radius: var(--radius-md);
+    border-width: 1px;
+    border-left-width: 4px;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--fs-body);
+}
+
+/* Badges de estado: el punto usa el color del texto y el texto siempre dice el estado */
+.badge {
+    --bs-badge-padding-x: 0.6em;
+    --bs-badge-padding-y: 0.3em;
+    --bs-badge-font-size: var(--fs-small);
+    --bs-badge-font-weight: 600;
+    --bs-badge-border-radius: var(--radius-sm);
+}
+.tbl .badge { display: inline-flex; align-items: center; gap: 0.4em; }
+.tbl .badge::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+}
+
+
+/* 6. FORMULARIOS
+   -------------------------------------------------------------------------- */
+.field { margin-bottom: var(--space-4); }
+.field:last-child { margin-bottom: 0; }
+
+.form-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-control, .form-select {
+    min-height: var(--touch);
+    font-size: 1rem;                /* evita el zoom automático en iOS */
+    color: var(--text-primary);
+    background-color: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-control::placeholder { color: var(--text-muted); opacity: 1; }
+.form-control:hover, .form-select:hover { border-color: var(--cpce-secondary); }
+.form-control:focus, .form-select:focus {
+    border-color: var(--cpce-primary);
+    box-shadow: 0 0 0 3px rgba(43, 108, 163, 0.25);
+}
+.form-control:disabled, .form-select:disabled { background-color: var(--surface-soft); color: var(--text-muted); }
+.form-text { margin-top: var(--space-1); font-size: var(--fs-small); color: var(--text-secondary); }
+
+.input-icon { position: relative; }
+.input-icon .icon {
+    position: absolute;
+    top: 50%;
+    left: var(--space-3);
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+.input-icon .form-control { padding-left: 2.5rem; }
+
+
+/* 7. TABLAS
+   -------------------------------------------------------------------------- */
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: var(--surface-hover);
+    --bs-table-border-color: var(--border);
+    margin: 0;
+    font-size: var(--fs-body);
+}
+.table > :not(caption) > * > * { padding: var(--space-3) var(--space-4); }
+.table thead th {
+    font-size: var(--fs-small);
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--surface-soft);
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+}
+.table tbody td { vertical-align: middle; }
+.table-hover > tbody > tr:hover > * { --bs-table-color-state: var(--text-primary); }
+
+/* Expedientes: el número pesa más que la carátula */
+.tbl-expedientes td:first-child { font-weight: 600; color: var(--cpce-primary-dark); }
+.tbl-expedientes td:first-child small,
+.tbl-expedientes td:first-child .text-muted { display: block; font-weight: 400; color: var(--text-secondary) !important; }
+
+.audit-scroll { max-height: min(70vh, 640px); overflow: auto; }
+.tbl-auditoria thead th { position: sticky; top: 0; z-index: 1; }
+.tbl-auditoria td { font-size: var(--fs-small); }
+
+
+/* 8. NOTAS MARGINALES Y FOJAS
+   Clases .nota / .foja-* disponibles para el HTML que renderiza app.js.
+   -------------------------------------------------------------------------- */
+.notas { max-height: 22rem; overflow-y: auto; padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5); background: var(--surface-soft); }
+
+.nota {
+    position: relative;
+    padding: 0 0 var(--space-4) var(--space-5);
+    border-left: 2px solid var(--border-strong);
+}
+.nota:last-child { padding-bottom: 0; }
+.nota::before {
+    content: "";
+    position: absolute;
+    top: 0.35rem;
+    left: -0.4375rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--cpce-accent);
+    border: 2px solid var(--surface-soft);
+}
+.nota__meta { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
+.nota__autor { font-weight: 600; color: var(--cpce-primary-dark); }
+.nota__fecha { font-size: var(--fs-small); color: var(--text-secondary); }
+.nota__texto { margin: var(--space-1) 0 0; overflow-wrap: anywhere; }
+
+.nota-form {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+}
+.nota-form .form-control { flex: 1 1 auto; min-width: 0; }
+
+.foja-doc { display: flex; align-items: center; gap: var(--space-3); }
+.foja-doc__icon { width: 2rem; height: 2rem; padding: 0.35rem; color: var(--cpce-primary); background: var(--cpce-primary-light); border-radius: var(--radius-sm); }
+.foja-doc__name { font-weight: 600; }
+.foja-lock { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--text-secondary); }
+
+
+/* 9. MODALES Y TOASTS
+   -------------------------------------------------------------------------- */
+.modal-content {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-overlay);
+}
+.modal-content > form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.modal-header { padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border); }
+.modal-title { font-size: var(--fs-h2); color: var(--cpce-primary-dark); }
+.modal-body { padding: var(--space-5); overflow-y: auto; flex: 1 1 auto; }
+.modal-intro { margin: 0 0 var(--space-4); color: var(--text-secondary); }
+.modal-footer {
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    background: var(--surface-soft);
+    border-top: 1px solid var(--border);
+}
+.modal-footer > * { margin: 0; }
+
+.toast { border-radius: var(--radius-md); box-shadow: var(--shadow-overlay); font-size: var(--fs-body); }
+
+
+/* 10. ESTADOS
+   -------------------------------------------------------------------------- */
+.tbl-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-6) var(--space-4);
+    margin: 0;
+    text-align: center;
+    color: var(--text-secondary);
+}
+td.tbl-state { display: table-cell; }
+td.tbl-state .spinner { display: inline-block; vertical-align: middle; margin-right: var(--space-3); }
+
+.spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--cpce-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Transición sutil entre vistas (solo opacidad) */
+#vista-dashboard, #vista-detalle-exp, #vista-auditoria { animation: vista-in 0.18s ease-out both; }
+@keyframes vista-in { from { opacity: 0; } to { opacity: 1; } }
+
+#vista-dashboard { display: none; }   /* app.js lo muestra tras el login */
+
+
+/* 11. LOGIN
+   -------------------------------------------------------------------------- */
+#vista-login {
+    display: flex;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--surface);
+}
+
+.login-aside { display: none; }
+
+.login-panel {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6) var(--gutter);
+}
+.login-card { width: 100%; max-width: 24rem; }
+
+.login-brand { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-5); }
+.logo-login { height: 2.5rem; width: auto; }
+.login-brand__name {
+    padding-left: var(--space-3);
+    border-left: 1px solid var(--border-strong);
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--cpce-primary-dark);
+}
+.login-title { font-size: var(--fs-h1); margin-bottom: var(--space-2); }
+.login-lead { margin: 0 0 var(--space-5); color: var(--text-secondary); }
+.login-card .btn { min-height: var(--touch); }
+.login-card .alert { margin-bottom: var(--space-4); }
+
+
+/* 12. RESPONSIVE (mobile-first en intención; se ajusta hacia abajo)
+   -------------------------------------------------------------------------- */
+@media (min-width: 576px) {
+    :root { --gutter: 1.5rem; }
+}
+
+@media (min-width: 992px) {
+    :root { --gutter: 2rem; }
+
+    /* Login en dos columnas: panel institucional con el margen de foja + formulario */
+    .login-aside {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex: 0 0 42%;
+        max-width: 36rem;
+        padding: var(--space-8) var(--space-8) var(--space-8) 6.5rem;
+        background: var(--cpce-primary-dark);
+        color: #fff;
+    }
+    .login-aside::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 4.5rem;
+        width: 1px;
+        background: rgba(255, 255, 255, 0.3);
+    }
+    .login-aside__logo { height: 2.75rem; width: auto; align-self: flex-start; filter: brightness(0) invert(1); }
+    .login-aside__title { margin: 0 0 var(--space-2); font-family: var(--font-display); font-size: var(--fs-display); font-weight: 600; line-height: 1.15; }
+    .login-aside__lead { margin: 0 0 var(--space-5); font-size: var(--fs-h3); color: rgba(255, 255, 255, 0.85); }
+    .login-aside__org { margin: 0; font-size: var(--fs-small); color: rgba(255, 255, 255, 0.75); }
+    .login-brand { display: none; }
+}
+
+@media (max-width: 767.98px) {
+    .filters { grid-template-columns: 1fr; }
+
+    /* Tablas apiladas: cada fila pasa a ser un ítem legible, sin scroll horizontal */
+    .tbl thead {
+        position: absolute;
+        width: 1px; height: 1px;
+        margin: -1px; padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+    .tbl, .tbl tbody { display: block; }
+    .tbl tbody tr {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--border);
+    }
+    .tbl tbody tr:last-child { border-bottom: 0; }
+    .tbl tbody td {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: 0;
+        border: 0;
+        text-align: right;
+    }
+    .tbl tbody td::before {
+        content: attr(data-label);
+        flex: none;
+        font-size: var(--fs-small);
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-align: left;
+    }
+    .tbl tbody td.tbl-state { display: block; text-align: center; }
+    .tbl tbody td.tbl-state::before { content: none; }
+
+    /* Etiquetas por columna (no dependen de app.js) */
+    .tbl-expedientes td:nth-child(1) { display: block; text-align: left; font-size: var(--fs-h3); }
+    .tbl-expedientes td:nth-child(1)::before { content: none; }
+    .tbl-expedientes td:nth-child(2)::before { content: "Área"; }
+    .tbl-expedientes td:nth-child(3)::before { content: "Estado"; }
+    .tbl-expedientes td:nth-child(4)::before { content: "Inicio"; }
+    .tbl-expedientes td:nth-child(5) { justify-content: flex-end; padding-top: var(--space-2); }
+    .tbl-expedientes td:nth-child(5)::before { content: none; }
+
+    .tbl-fojas td:nth-child(2) { order: -1; display: block; text-align: left; font-weight: 600; font-size: var(--fs-h3); }
+    .tbl-fojas td:nth-child(2)::before { content: none; }
+    .tbl-fojas td:nth-child(1)::before { content: "Fecha"; }
+    .tbl-fojas td:nth-child(3)::before { content: "Clasificación"; }
+    .tbl-fojas td:nth-child(4) { justify-content: flex-end; padding-top: var(--space-2); }
+    .tbl-fojas td:nth-child(4)::before { content: none; }
+
+    .tbl-auditoria td:nth-child(1)::before { content: "Fecha y hora"; }
+    .tbl-auditoria td:nth-child(2)::before { content: "Usuario ID"; }
+    .tbl-auditoria td:nth-child(3)::before { content: "Acción"; }
+    .tbl-auditoria td:nth-child(4)::before { content: "Entidad"; }
+    .tbl-auditoria td:nth-child(5)::before { content: "Registro afectado"; }
+    .tbl-auditoria td:nth-child(6)::before { content: "IP"; }
+    .tbl-auditoria td { overflow-wrap: anywhere; }
+
+    .audit-scroll { max-height: none; overflow: visible; }
+}
+
+@media (max-width: 575.98px) {
+    .btn, .btn-sm { min-height: var(--touch); }
+    .page-title, .exp-title { font-size: 1.5rem; }
+    .brand__logo { height: 1.75rem; }
+    .brand__name { display: none; }
+    .user-info { max-width: 9rem; }
+
+    /* Cerrar sesión pasa a ícono (44x44) manteniendo el texto para lectores de pantalla */
+    .btn-logout { min-width: var(--touch); padding-left: 0; padding-right: 0; }
+    .btn-logout__text {
+        position: absolute;
+        width: 1px; height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+
+    /* Acción principal primero y a todo el ancho */
+    .page-actions { width: 100%; }
+    .page-actions .btn { flex: 1 1 auto; }
+    #btn-nuevo-exp { order: -1; flex-basis: 100%; }
+
+    .exp-head__actions { width: 100%; }
+    .exp-head__actions .form-select, .exp-head__actions .btn { flex: 1 1 100%; }
+    .section-head .btn { width: 100%; }
+
+    .nota-form { flex-direction: column; }
+
+    .modal-footer { flex-direction: column-reverse; align-items: stretch; }
+    .modal-footer .btn { width: 100%; }
+
+    .toast-container { left: 0; width: 100%; }
+    .toast { width: 100%; }
+
+    .login-panel { align-items: flex-start; padding-top: var(--space-6); }
+}
+
+
+/* 13. ACCESIBILIDAD
+   -------------------------------------------------------------------------- */
+:focus-visible {
+    outline: 2px solid var(--cpce-primary);
+    outline-offset: 2px;
+}
+.app-header--dark :focus-visible, .login-aside :focus-visible { outline-color: #fff; }
+
+.btn:focus-visible, .btn-close:focus-visible {
+    outline: 2px solid var(--cpce-primary);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;   /* justificado: respeta preferencia del sistema */
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .spinner { animation: none; border-top-color: var(--border-strong); }
 }
