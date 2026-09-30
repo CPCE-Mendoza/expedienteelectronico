@@ -3,7 +3,7 @@
 // VERSIÓN OPTIMIZADA (ASYNC/AWAIT & API WRAPPER)
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/library/d/1RsBJR70PGEAAM3vPdiK2PgIJCHB8XKcV0lhVlxs98sOpHfiIzj32vYyR/27"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbzfD41TabdsIGPR7D3pkqq2WM2ur8ImcLbxPJcH9ZywQJe7X4tODUUEQfpVlaKZsU2-7A/exec"; 
 
 function mostrarToast(mensaje, tipo = 'success') {
     const toastEl = document.getElementById('sistema-toast');
