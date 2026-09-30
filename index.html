@@ -156,10 +156,12 @@
                 <label class="form-label" for="filtro-estado">Estado</label>
                 <select id="filtro-estado" class="form-select" onchange="filtrarExpedientes()">
                     <option value="">Todos los estados</option>
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="EN PROCESO">En proceso</option>
-                    <option value="RESUELTO">Resuelto</option>
-                    <option value="ARCHIVADO">Archivado</option>
+<option value="PENDIENTE">Pendiente</option>
+<option value="EN PROCESO">En proceso</option>
+<option value="RESUELTO">Resuelto</option>
+<option value="ARCHIVADO">Archivado</option>
+<option value="QUEBRANTADO_INHABILITADO">Quebrantado / Inhabilitado</option>
+<option value="EN ESPERA DE MATRICULACION">En espera de matriculación</option>
                 </select>
             </div>
         </div>
@@ -211,6 +213,10 @@
 
         <section class="exp-head">
             <h1 class="exp-title" id="detalle-nro-exp">EXP. N° ...</h1>
+            <button type="button" class="btn btn-primary-cpce" id="btn-ver-expediente-completo" onclick="verExpedienteCompleto()">
+    <svg class="icon" aria-hidden="true"><use href="#i-file"/></svg>
+    Ver Expediente Completo
+</button>
             <div class="exp-head__actions">
                 <select id="selector-estado-exp" class="form-select" aria-label="Estado del expediente" style="display: none;" onchange="cambiarEstadoExp(this.value)">
                     <option value="PENDIENTE">Pendiente</option>
@@ -431,9 +437,9 @@
                         <label class="form-label" for="new-user-rol">Rol en el sistema</label>
                         <select id="new-user-rol" class="form-select" required>
                             <option value="INSTRUCTOR">Instructor</option>
-                            <option value="TRIBUNAL">Tribunal de Ética</option>
-                            <option value="ABOGADO">Abogado defensor</option>
-                            <option value="INVESTIGADO">Investigado</option>
+<option value="TRIBUNAL">Tribunal de Ética</option>
+<option value="ABOGADO">Abogado</option>
+<option value="INVESTIGADO">Investigado</option>
                         </select>
                     </div>
                 </div>

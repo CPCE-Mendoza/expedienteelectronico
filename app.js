@@ -610,3 +610,72 @@ async function cargarAuditoria() {
         mostrarToast("Error al cargar auditoría.", 'error');
     }
 }
+
+function renderizarTablaExpedientes(lista) {
+  const tbody = document.getElementById('tabla-expedientes');
+  tbody.innerHTML = '';
+  
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="tbl-state">No hay expedientes cargados.</td></tr>';
+    return;
+  }
+
+  lista.forEach(exp => {
+    tbody.innerHTML += `
+      <tr>
+        <td><strong>${exp.nro_expediente}</strong></td>
+        <td>${exp.area}</td>
+        <td><span class="badge bg-info text-dark">${exp.estado}</span></td>
+        <td>${exp.fecha}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" onclick="verDetalleExpediente('${exp.id}')">
+            Ver Detalle
+          </button>
+          ${usuarioActual.rol === 'SECRETARIA' ? `
+            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarExpediente('${exp.id}')">
+              Borrar
+            </button>
+          ` : ''}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function cargarNotasMarginales(idExpediente) {
+  // Oculta el contenedor completo si el usuario es INVESTIGADO / DENUNCIADO
+  if (usuarioActual.rol === 'INVESTIGADO') {
+    document.getElementById('seccion-notas-container').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('seccion-notas-container').style.display = 'block';
+  // Continúa cargando las notas normalmente...
+}
+
+function obtenerLinkArchivoDirecto(link) {
+  const match = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/id=([a-zA-Z0-9_-]+)/);
+  if (match) {
+    return "https://drive.google.com/file/d/" + match[1] + "/view";
+  }
+  return link;
+}
+
+function verExpedienteCompleto() {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        // Abre una pestaña con las fojas correlativas ordenadas
+        let htmlContent = "<h2>" + expedienteActual.nro_expediente + " - EXPEDIENTE COMPLETO</h2>";
+        res.fojas.forEach(f => {
+          htmlContent += `<h3>${f.nombre}</h3><iframe src="${f.urlDirecta}" width="100%" height="800px" style="margin-bottom:20px;"></iframe>`;
+        });
+        
+        let win = window.open("", "_blank");
+        win.document.write("<html><head><title>Expediente Completo</title></head><body style='font-family:sans-serif; padding:20px;'>" + htmlContent + "</body></html>");
+      } else {
+        alert("Error: " + res.error);
+      }
+    })
+    .obtenerExpedienteCompletoPDF(expedienteActualId);
+}
