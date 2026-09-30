@@ -1,9 +1,9 @@
 // ==========================================
 // CONEXIÓN CON EL BACKEND (API) Y LÓGICA UI
-// VERSIÓN OPTIMIZADA (ASYNC/AWAIT & API WRAPPER)
 // ==========================================
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzfD41TabdsIGPR7D3pkqq2WM2ur8ImcLbxPJcH9ZywQJe7X4tODUUEQfpVlaKZsU2-7A/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbz4LpSC0kN6Y3A_0x3TtjsZaw5kds7F6FbYabR_PKe2fQlO9Mdsu6xbD1E_JQCmdivJpQ/exec"; 
+let expedienteActualId = null;
 
 function mostrarToast(mensaje, tipo = 'success') {
     const toastEl = document.getElementById('sistema-toast');
@@ -18,10 +18,6 @@ function mostrarToast(mensaje, tipo = 'success') {
     toast.show();
 }
 
-/**
- * FUNCIÓN MAESTRA DE CONEXIÓN
- * Centraliza todas las llamadas al servidor para no repetir código.
- */
 async function callAPI(accion, payload = {}) {
     const token = localStorage.getItem('cpce_token');
     const response = await fetch(API_URL, {
@@ -33,13 +29,9 @@ async function callAPI(accion, payload = {}) {
     return response.json();
 }
 
-// ==========================================
-// MÓDULO: AUTENTICACIÓN Y SESIÓN
-// ==========================================
-
+// --- AUTENTICACIÓN ---
 async function iniciarSesion(e) {
     e.preventDefault(); 
-    
     const btn = document.getElementById('btn-login');
     const errorDiv = document.getElementById('login-error');
     const successDiv = document.getElementById('login-success');
@@ -53,14 +45,12 @@ async function iniciarSesion(e) {
 
     try {
         const data = await callAPI("login", { email, password });
-        
         if (data.success) {
             if (data.require_password_change) {
                 document.getElementById('form-login').style.display = 'none';
                 document.getElementById('form-nueva-password').style.display = 'block';
                 document.getElementById('reset-email').value = data.email;
                 document.getElementById('reset-codigo').value = password; 
-                errorDiv.classList.add('d-none');
             } else {
                 localStorage.setItem('cpce_token', data.token);
                 localStorage.setItem('cpce_user', JSON.stringify(data.usuario));
@@ -96,9 +86,8 @@ async function guardarNuevaPassword(e) {
             document.getElementById('password').value = '';
             
             const successDiv = document.getElementById('login-success');
-            successDiv.innerText = "¡Contraseña actualizada! Por favor, ingrese de nuevo.";
+            successDiv.innerText = "¡Contraseña actualizada! Ingrese de nuevo.";
             successDiv.classList.remove('d-none');
-            document.getElementById('login-error').classList.add('d-none');
         } else {
             mostrarError(data.error);
         }
@@ -130,20 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('cpce_token')) mostrarDashboard();
 });
 
-// ==========================================
-// MÓDULO: GESTIÓN DE EXPEDIENTES (DASHBOARD)
-// ==========================================
-
+// --- DASHBOARD ---
 function mostrarDashboard() {
     document.getElementById('vista-login').style.display = 'none';
     document.getElementById('vista-detalle-exp').style.display = 'none';
     document.getElementById('vista-dashboard').style.display = 'block';
     
     const usuario = JSON.parse(localStorage.getItem('cpce_user'));
-    const nombreMostrar = usuario.nombre || usuario.email;
-    document.getElementById('user-info').innerText = nombreMostrar + " | Perfil: " + usuario.rol;
+    document.getElementById('user-info').innerText = (usuario.nombre || usuario.email) + " | Rol: " + usuario.rol;
     
-    // Control de permisos de creación y administración
     const btnNuevoExp = document.getElementById('btn-nuevo-exp');
     const btnGestionUser = document.getElementById('btn-gestion-usuarios');
     const btnAuditoria = document.getElementById('btn-ver-auditoria');
@@ -172,11 +156,11 @@ async function cargarExpedientes() {
                 return;
             }
 
+            const usuario = JSON.parse(localStorage.getItem('cpce_user'));
+
             data.data.forEach(exp => {
                 const fechaFormat = new Date(exp.fecha).toLocaleDateString();
-                
-                // LÓGICA INTELIGENTE DE COLORES PARA ESTADOS
-                let colorEstado = "bg-info text-dark"; // Color por defecto
+                let colorEstado = "bg-info text-dark";
                 if (exp.estado === "PENDIENTE") colorEstado = "bg-warning text-dark";
                 else if (exp.estado === "EN PROCESO") colorEstado = "bg-primary";
                 else if (exp.estado === "RESUELTO") colorEstado = "bg-success";
@@ -190,6 +174,7 @@ async function cargarExpedientes() {
                         <td>${fechaFormat}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary" onclick="abrirDetalle('${exp.id}', '${exp.nro_expediente}')">Ver Detalle</button>
+                            ${usuario.rol === 'SECRETARIA' ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="confirmarEliminarExpediente('${exp.id}')">Borrar</button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -198,7 +183,6 @@ async function cargarExpedientes() {
             cerrarSesion();
         }
     } catch (err) {
-        console.error("Error al cargar expedientes", err);
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Error de conexión.</td></tr>';
     }
 }
@@ -208,15 +192,11 @@ async function crearExpediente(e) {
     const btn = document.getElementById('btn-guardar-exp');
     const errorDiv = document.getElementById('modal-error');
     btn.disabled = true;
-    btn.innerHTML = "Guardando...";
     errorDiv.classList.add('d-none');
 
-    // Capturamos los campos del modal de creación
     const payload = {
         nro_expediente: document.getElementById('exp-nro').value,
-        area: document.getElementById('exp-area').value,
-        id_denunciante: document.getElementById('exp-abogado') ? document.getElementById('exp-abogado').value : "",
-        id_investigado: document.getElementById('exp-investigado') ? document.getElementById('exp-investigado').value : ""
+        area: document.getElementById('exp-area').value
     };
 
     try {
@@ -235,15 +215,22 @@ async function crearExpediente(e) {
         errorDiv.classList.remove('d-none');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = "Guardar Expediente";
     }
 }
 
-// ==========================================
-// MÓDULO: VISTA DE DETALLE (FOJAS Y NOTAS)
-// ==========================================
-let expedienteActualId = null;
+async function confirmarEliminarExpediente(idExpediente) {
+    if (confirm("¿Está seguro de borrar este expediente del sistema?")) {
+        const data = await callAPI("delete_expediente", { id_expediente: idExpediente });
+        if (data.success) {
+            mostrarToast("Expediente eliminado.", "success");
+            cargarExpedientes();
+        } else {
+            mostrarToast(data.error, "error");
+        }
+    }
+}
 
+// --- DETALLE DEL EXPEDIENTE ---
 function abrirDetalle(idExpediente, nroExpediente) {
     expedienteActualId = idExpediente;
     document.getElementById('vista-dashboard').style.display = 'none';
@@ -252,7 +239,6 @@ function abrirDetalle(idExpediente, nroExpediente) {
     
     const usuario = JSON.parse(localStorage.getItem('cpce_user'));
     
-    // REGLA 1: Selector de Estado (Secretaría, Instructor, Tribunal)
     const selectorEstado = document.getElementById('selector-estado-exp');
     if (['SECRETARIA', 'INSTRUCTOR', 'TRIBUNAL'].includes(usuario.rol)) {
         if (selectorEstado) selectorEstado.style.display = 'block';
@@ -260,10 +246,8 @@ function abrirDetalle(idExpediente, nroExpediente) {
         if (selectorEstado) selectorEstado.style.display = 'none';
     }
 
-    // REGLA 2: Botones de Gestión (Asignar Partes y Subir Foja) -> Solo Secretaría e Instructor
     const btnAsignar = document.getElementById('btn-asignar-partes');
     const btnSubirFoja = document.getElementById('btn-subir-foja');
-    
     if (['SECRETARIA', 'INSTRUCTOR'].includes(usuario.rol)) {
         if (btnAsignar) btnAsignar.style.display = 'block';
         if (btnSubirFoja) btnSubirFoja.style.display = 'block';
@@ -272,7 +256,6 @@ function abrirDetalle(idExpediente, nroExpediente) {
         if (btnSubirFoja) btnSubirFoja.style.display = 'none';
     }
 
-    // REGLA 3: Notas Marginales (Todos menos el Investigado)
     const seccionNotas = document.getElementById('seccion-notas-container');
     if (usuario.rol === 'INVESTIGADO') {
         if (seccionNotas) seccionNotas.style.display = 'none';
@@ -281,7 +264,6 @@ function abrirDetalle(idExpediente, nroExpediente) {
         cargarNotas(idExpediente);
     }
 
-    // REGLA 4: Siempre cargar los documentos (el backend se encarga de ocultar los confidenciales)
     cargarFojas(idExpediente);
 }
 
@@ -293,34 +275,35 @@ function volverDashboard() {
 
 async function cargarFojas(idExpediente) {
     const tbody = document.getElementById('tabla-fojas');
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Cargando documentos...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">Cargando documentos...</td></tr>';
 
     try {
         const data = await callAPI("list_fojas", { id_expediente: idExpediente });
         if (data.success) {
             tbody.innerHTML = ''; 
             if (data.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Aún no hay fojas cargadas.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Aún no hay fojas cargadas.</td></tr>';
                 return;
             }
             
+            const usuario = JSON.parse(localStorage.getItem('cpce_user'));
+
             data.data.forEach(foja => {
                 const fechaFormat = new Date(foja.fecha).toLocaleDateString();
                 const badgeColor = foja.confidencialidad === 'PUBLICO' ? 'bg-success' : 'bg-danger';
                 
-                // Soporte inteligente para enlaces viejos (IDs) y nuevos (URLs completas)
-                let urlDocumento = foja.id_drive;
-                if (!urlDocumento.startsWith('http')) {
-                    urlDocumento = 'https://drive.google.com/file/d/' + urlDocumento + '/view';
-                }
+                let fileId = foja.link_drive.match(/\/d\/([a-zA-Z0-9_-]+)/) || foja.link_drive.match(/id=([a-zA-Z0-9_-]+)/);
+                let urlDocumento = fileId ? "https://drive.google.com/file/d/" + fileId[1] + "/view" : foja.link_drive;
                 
                 tbody.innerHTML += `
                     <tr>
-                        <td class="align-middle">${fechaFormat}</td>
+                        <td class="align-middle fw-bold">Foja ${foja.foja_inicio || 1}</td>
                         <td class="align-middle fw-bold">${foja.nombre}</td>
                         <td class="align-middle"><span class="badge ${badgeColor}">${foja.confidencialidad}</span></td>
+                        <td class="align-middle">${fechaFormat}</td>
                         <td class="align-middle">
-                            <a href="${urlDocumento}" target="_blank" class="btn btn-sm btn-outline-primary">Ver Documento</a>
+                            <a href="${urlDocumento}" target="_blank" class="btn btn-sm btn-outline-primary">Ver PDF</a>
+                            ${usuario.rol === 'SECRETARIA' ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="confirmarEliminarFoja('${foja.id_foja}')">Eliminar</button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -335,17 +318,15 @@ async function procesarSubidaFoja(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-guardar-foja');
     const errorDiv = document.getElementById('error-foja');
-    
     btn.disabled = true;
-    btn.innerHTML = "Vinculando...";
     errorDiv.classList.add('d-none');
 
     const payload = {
         id_expediente: expedienteActualId,
         nombre_archivo: document.getElementById('titulo-foja').value,
-        tipo_foja: "GENERAL",
         confidencialidad: document.getElementById('confidencialidad-foja').value,
-        link_drive: document.getElementById('link-drive').value
+        link_drive: document.getElementById('link-drive').value,
+        foja_inicio: document.getElementById('foja-inicio') ? document.getElementById('foja-inicio').value : 1
     };
 
     try {
@@ -364,10 +345,47 @@ async function procesarSubidaFoja(e) {
         errorDiv.classList.remove('d-none');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = "Vincular al Sistema";
     }
 }
 
+async function confirmarEliminarFoja(idFoja) {
+    if (confirm("¿Desea borrar esta foja duplicada o errónea?")) {
+        const data = await callAPI("delete_foja", { id_foja: idFoja });
+        if (data.success) {
+            mostrarToast("Foja eliminada.", "success");
+            cargarFojas(expedienteActualId);
+        } else {
+            mostrarToast(data.error, "error");
+        }
+    }
+}
+
+async function verExpedienteCompleto() {
+    const btn = document.getElementById('btn-ver-expediente-completo');
+    btn.disabled = true;
+    btn.innerText = "Cargando...";
+
+    try {
+        const data = await callAPI("get_full_pdf", { id_expediente: expedienteActualId });
+        if (data.success) {
+            let htmlContent = "<h2>EXPEDIENTE UNIFICADO - CORRIDO</h2>";
+            data.fojas.forEach(f => {
+                htmlContent += `<div style='margin-bottom:30px;'><h3>${f.nombre} (Foja ${f.fojaInicio})</h3><iframe src="${f.urlDirecta}" width="100%" height="800px" frameborder="0"></iframe></div>`;
+            });
+            let win = window.open("", "_blank");
+            win.document.write("<html><head><title>Expediente Completo</title></head><body style='font-family:sans-serif; padding:20px; background:#F3F5F8;'>" + htmlContent + "</body></html>");
+        } else {
+            mostrarToast(data.error, "error");
+        }
+    } catch(e) {
+        mostrarToast("Error al cargar visor corrido.", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Ver Expediente Completo";
+    }
+}
+
+// --- NOTAS Y USUARIOS ---
 async function cargarNotas(idExpediente) {
     const contenedor = document.getElementById('contenedor-notas');
     contenedor.innerHTML = '<p class="text-muted text-center py-3">Cargando notas...</p>';
@@ -380,7 +398,6 @@ async function cargarNotas(idExpediente) {
                 contenedor.innerHTML = '<p class="text-muted text-center py-3">No hay notas registradas.</p>';
                 return;
             }
-            
             data.data.forEach(nota => {
                 const fechaFormat = new Date(nota.fecha).toLocaleString();
                 contenedor.innerHTML += `
@@ -423,24 +440,18 @@ async function guardarNota(e) {
             mostrarToast(data.error, 'error');
         }
     } catch (err) {
-        mostrarToast("Error de conexión al guardar la nota.", "error");
+        mostrarToast("Error de conexión.", "error");
     } finally {
         btn.disabled = false;
     }
 }
-
-// ==========================================
-// MÓDULO: GESTIÓN DE USUARIOS (ADMIN)
-// ==========================================
 
 async function crearUsuarioFront(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-crear-user');
     const errorDiv = document.getElementById('modal-user-error');
     const successDiv = document.getElementById('modal-user-success');
-    
     btn.disabled = true;
-    btn.innerHTML = "Generando...";
     errorDiv.classList.add('d-none');
     successDiv.classList.add('d-none');
 
@@ -457,98 +468,8 @@ async function crearUsuarioFront(e) {
             successDiv.classList.remove('d-none');
             document.getElementById('form-nuevo-usuario').reset();
             mostrarToast("Usuario creado correctamente", "success");
-            
             setTimeout(() => {
                 bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario')).hide();
-                successDiv.classList.add('d-none');
-            }, 3000);
-        } else {
-            errorDiv.innerText = data.error;
-            errorDiv.classList.remove('d-none');
-        }
-    } catch (err) {
-        errorDiv.innerText = "Error de conexión con el servidor.";
-        errorDiv.classList.remove('d-none');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = "Generar y Enviar Acceso";
-    }
-}
-
-// ==========================================
-// MÓDULO: BÚSQUEDA Y ESTADOS
-// ==========================================
-
-function filtrarExpedientes() {
-    const texto = document.getElementById('buscador-exp').value.toLowerCase();
-    const filtroArea = document.getElementById('filtro-area').value.toLowerCase();
-    const filtroEstado = document.getElementById('filtro-estado').value.toLowerCase();
-    
-    const filas = document.querySelectorAll('#tabla-expedientes tr');
-    
-    filas.forEach(fila => {
-        if (fila.cells.length < 5) return; 
-        
-        const textoCaratula = fila.cells[0].innerText.toLowerCase();
-        const textoArea = fila.cells[1].innerText.toLowerCase();
-        const textoEstado = fila.cells[2].innerText.toLowerCase();
-        
-        const cumpleTexto = textoCaratula.includes(texto);
-        const cumpleArea = filtroArea === "" || textoArea.includes(filtroArea);
-        const cumpleEstado = filtroEstado === "" || textoEstado === filtroEstado;
-        
-        fila.style.display = (cumpleTexto && cumpleArea && cumpleEstado) ? '' : 'none';
-    });
-}
-
-async function cambiarEstadoExp(nuevoEstado) {
-    if (!confirm(`¿Está seguro de cambiar el estado a "${nuevoEstado}"?`)) {
-        // Si cancela, devolvemos el selector a su estado original (recargando dashboard)
-        mostrarDashboard(); 
-        return;
-    }
-
-    try {
-        const data = await callAPI("change_status", {
-            id_expediente: expedienteActualId,
-            nuevo_estado: nuevoEstado
-        });
-
-        if (data.success) {
-            mostrarToast("Estado actualizado correctamente en la base de datos.", "success");
-        } else {
-            mostrarToast(data.error, "error");
-        }
-    } catch (err) {
-        mostrarToast("Error de conexión al actualizar el estado.", "error");
-    }
-}
-
-async function guardarPartes(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btn-guardar-partes');
-    const errorDiv = document.getElementById('modal-partes-error');
-    const successDiv = document.getElementById('modal-partes-success');
-    
-    btn.disabled = true;
-    errorDiv.classList.add('d-none');
-    successDiv.classList.add('d-none');
-
-    const payload = {
-        id_expediente: expedienteActualId,
-        email_abogado: document.getElementById('email-abogado').value,
-        email_investigado: document.getElementById('email-investigado').value
-    };
-
-    try {
-        const data = await callAPI("assign_parties", payload);
-        if (data.success) {
-            successDiv.innerText = data.message;
-            successDiv.classList.remove('d-none');
-            mostrarToast("Partes asignadas correctamente.", "success");
-            setTimeout(() => {
-                bootstrap.Modal.getInstance(document.getElementById('modalAsignarPartes')).hide();
-                successDiv.classList.add('d-none');
             }, 2000);
         } else {
             errorDiv.innerText = data.error;
@@ -562,40 +483,74 @@ async function guardarPartes(e) {
     }
 }
 
-// ==========================================
-// MÓDULO: AUDITORÍA (SOLO ADMIN)
-// ==========================================
-function abrirAuditoria() {
-    document.getElementById('vista-dashboard').style.display = 'none';
-    document.getElementById('vista-auditoria').style.display = 'block';
-    cargarAuditoria();
+function filtrarExpedientes() {
+    const texto = document.getElementById('buscador-exp').value.toLowerCase();
+    const filtroArea = document.getElementById('filtro-area').value.toLowerCase();
+    const filtroEstado = document.getElementById('filtro-estado').value.toLowerCase();
+    
+    const filas = document.querySelectorAll('#tabla-expedientes tr');
+    filas.forEach(fila => {
+        if (fila.cells.length < 5) return; 
+        const textoCaratula = fila.cells[0].innerText.toLowerCase();
+        const textoArea = fila.cells[1].innerText.toLowerCase();
+        const textoEstado = fila.cells[2].innerText.toLowerCase();
+        
+        const cumpleTexto = textoCaratula.includes(texto);
+        const cumpleArea = filtroArea === "" || textoArea.includes(filtroArea);
+        const cumpleEstado = filtroEstado === "" || textoEstado.includes(filtroEstado);
+        
+        fila.style.display = (cumpleTexto && cumpleArea && cumpleEstado) ? '' : 'none';
+    });
 }
 
-function volverDashboardDesdeAuditoria() {
-    document.getElementById('vista-auditoria').style.display = 'none';
-    document.getElementById('vista-dashboard').style.display = 'block';
+async function cambiarEstadoExp(nuevoEstado) {
+    if (!confirm(`¿Desea cambiar el estado a "${nuevoEstado}"?`)) return;
+    try {
+        const data = await callAPI("change_status", { id_expediente: expedienteActualId, nuevo_estado: nuevoEstado });
+        if (data.success) mostrarToast("Estado actualizado.", "success");
+        else mostrarToast(data.error, "error");
+    } catch (err) {
+        mostrarToast("Error de conexión.", "error");
+    }
+}
+
+async function guardarPartes(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar-partes');
+    btn.disabled = true;
+    const payload = {
+        id_expediente: expedienteActualId,
+        email_abogado: document.getElementById('email-abogado').value,
+        email_investigado: document.getElementById('email-investigado').value
+    };
+
+    try {
+        const data = await callAPI("assign_parties", payload);
+        if (data.success) {
+            mostrarToast("Partes asignadas correctamente.", "success");
+            bootstrap.Modal.getInstance(document.getElementById('modalAsignarPartes')).hide();
+        } else {
+            mostrarToast(data.error, "error");
+        }
+    } catch (err) {
+        mostrarToast("Error de conexión.", "error");
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 async function cargarAuditoria() {
     const tbody = document.getElementById('tabla-auditoria');
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Cargando registros...</td></tr>';
-    
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">Cargando...</td></tr>';
     try {
         const data = await callAPI("list_audit");
         if (data.success) {
             tbody.innerHTML = '';
-            if (data.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4">No hay registros.</td></tr>';
-                return;
-            }
-            
-            // Invertimos el array para ver lo más reciente arriba
             data.data.reverse().forEach(log => {
-                const fechaFormat = new Date(log.fecha).toLocaleString();
                 tbody.innerHTML += `
                     <tr>
-                        <td><small>${fechaFormat}</small></td>
-                        <td><small class="text-muted">${log.usuario.split('-')[0]}...</small></td>
+                        <td><small>${new Date(log.fecha).toLocaleString()}</small></td>
+                        <td><small>${log.usuario.split('-')[0]}...</small></td>
                         <td><span class="badge bg-secondary">${log.accion}</span></td>
                         <td>${log.entidad}</td>
                         <td><small>${log.id_entidad.split('-')[0] || '-'}</small></td>
@@ -603,79 +558,17 @@ async function cargarAuditoria() {
                     </tr>
                 `;
             });
-        } else {
-            mostrarToast(data.error, 'error');
         }
     } catch (err) {
         mostrarToast("Error al cargar auditoría.", 'error');
     }
 }
-
-function renderizarTablaExpedientes(lista) {
-  const tbody = document.getElementById('tabla-expedientes');
-  tbody.innerHTML = '';
-  
-  if (lista.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="tbl-state">No hay expedientes cargados.</td></tr>';
-    return;
-  }
-
-  lista.forEach(exp => {
-    tbody.innerHTML += `
-      <tr>
-        <td><strong>${exp.nro_expediente}</strong></td>
-        <td>${exp.area}</td>
-        <td><span class="badge bg-info text-dark">${exp.estado}</span></td>
-        <td>${exp.fecha}</td>
-        <td>
-          <button class="btn btn-sm btn-outline-primary" onclick="verDetalleExpediente('${exp.id}')">
-            Ver Detalle
-          </button>
-          ${usuarioActual.rol === 'SECRETARIA' ? `
-            <button class="btn btn-sm btn-outline-danger" onclick="confirmarEliminarExpediente('${exp.id}')">
-              Borrar
-            </button>
-          ` : ''}
-        </td>
-      </tr>
-    `;
-  });
+function abrirAuditoria() {
+    document.getElementById('vista-dashboard').style.display = 'none';
+    document.getElementById('vista-auditoria').style.display = 'block';
+    cargarAuditoria();
 }
-
-function cargarNotasMarginales(idExpediente) {
-  // Oculta el contenedor completo si el usuario es INVESTIGADO / DENUNCIADO
-  if (usuarioActual.rol === 'INVESTIGADO') {
-    document.getElementById('seccion-notas-container').style.display = 'none';
-    return;
-  }
-  
-  document.getElementById('seccion-notas-container').style.display = 'block';
-  // Continúa cargando las notas normalmente...
-}
-
-function obtenerLinkArchivoDirecto(link) {
-  const match = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/id=([a-zA-Z0-9_-]+)/);
-  if (match) {
-    return "https://drive.google.com/file/d/" + match[1] + "/view";
-  }
-  return link;
-}
-
-function verExpedienteCompleto() {
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res.success) {
-        // Abre una pestaña con las fojas correlativas ordenadas
-        let htmlContent = "<h2>" + expedienteActual.nro_expediente + " - EXPEDIENTE COMPLETO</h2>";
-        res.fojas.forEach(f => {
-          htmlContent += `<h3>${f.nombre}</h3><iframe src="${f.urlDirecta}" width="100%" height="800px" style="margin-bottom:20px;"></iframe>`;
-        });
-        
-        let win = window.open("", "_blank");
-        win.document.write("<html><head><title>Expediente Completo</title></head><body style='font-family:sans-serif; padding:20px;'>" + htmlContent + "</body></html>");
-      } else {
-        alert("Error: " + res.error);
-      }
-    })
-    .obtenerExpedienteCompletoPDF(expedienteActualId);
+function volverDashboardDesdeAuditoria() {
+    document.getElementById('vista-auditoria').style.display = 'none';
+    document.getElementById('vista-dashboard').style.display = 'block';
 }
